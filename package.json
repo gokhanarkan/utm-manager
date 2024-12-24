@@ -28,6 +28,14 @@
     "README.md",
     "LICENSE"
   ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/gokhanarkan/utm-manager"
+  },
+  "homepage": "https://github.com/gokhanarkan/utm-manager",
+  "bugs": {
+    "url": "https://github.com/gokhanarkan/utm-manager/issues"
+  },
   "scripts": {
     "clean": "rimraf dist",
     "build": "npm run clean && rollup -c",
