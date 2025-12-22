@@ -1,22 +1,18 @@
 # UTM Manager
 
-A robust, framework-agnostic UTM parameter management solution for modern JavaScript applications. This package provides a comprehensive solution for handling UTM parameters across different JavaScript environments, with built-in support for vanilla JavaScript, React, and Next.js applications.
+A framework-agnostic UTM parameter management solution for JavaScript applications. Provides comprehensive UTM tracking with built-in support for vanilla JavaScript, React, and Next.js.
 
 ## Features
 
-UTM Manager offers a complete solution for UTM parameter tracking and management:
-
-- Framework-agnostic core with dedicated React and Next.js integrations
-- Multiple attribution strategies (first-touch, last-touch, and custom)
+- Framework-agnostic core with React and Next.js integrations
+- Multiple attribution strategies (first-touch, last-touch, dynamic)
 - Secure cookie handling with configurable options
 - Cross-domain and subdomain support
 - TypeScript support with comprehensive type definitions
 - Zero dependencies for the core package
-- Server-side rendering support for Next.js applications
+- Server-side rendering support for Next.js
 
 ## Installation
-
-Install the package using your preferred package manager:
 
 ```bash
 npm install utm-manager
@@ -26,51 +22,72 @@ yarn add utm-manager
 pnpm add utm-manager
 ```
 
-## Usage Examples
+## Usage
 
 ### Standalone JavaScript
 
-For traditional websites or vanilla JavaScript applications, you can include UTM Manager directly in your HTML:
+For traditional websites, include the script directly:
 
 ```html
-<!-- Auto-capture UTMs on load -->
-<script src="dist/utm-manager.min.js" data-auto-capture="true"></script>
+<script src="https://unpkg.com/utm-manager/dist/utm-manager.min.js"></script>
+```
 
-<!-- Manual initialization -->
-<script src="dist/utm-manager.min.js"></script>
-<script>
-  // Configure UTM handling
-  UTMManager.configure({
-    attribution: "last",
-    expirationDays: 30,
-    domain: ".yourdomain.com",
+The script automatically:
+- Captures UTM parameters from the URL
+- Stores them in cookies
+- Triggers `utmParametersUpdated` events
+
+#### Standalone API
+
+```javascript
+// Get all stored UTM parameters
+const params = UTMManager.getAllUTMs();
+
+// Get a specific UTM parameter
+const campaign = UTMManager.getUTM("utm_campaign");
+
+// Manually save a UTM parameter
+UTMManager.saveUTM("utm_source", "newsletter");
+
+// Configure options
+UTMManager.configure({
+  attribution: "first",   // 'first' | 'last' | 'dynamic'
+  expirationDays: 90,
+  domain: ".yourdomain.com",
+});
+
+// Listen for UTM updates
+window.addEventListener("utmParametersUpdated", (event) => {
+  console.log("UTM Parameters:", event.detail);
+});
+```
+
+#### Form Integration Example
+
+```javascript
+document.querySelector("form").addEventListener("submit", function() {
+  const utmParams = UTMManager.getAllUTMs();
+  Object.entries(utmParams).forEach(([key, value]) => {
+    const input = document.createElement("input");
+    input.type = "hidden";
+    input.name = key;
+    input.value = value;
+    this.appendChild(input);
   });
-
-  // Auto-capture UTMs from URL
-  UTMManager.autoCapture();
-
-  // Listen for UTM updates
-  window.addEventListener("utmParametersUpdated", function (event) {
-    console.log("UTM Parameters:", event.detail);
-  });
-</script>
+});
 ```
 
 ### React Integration
-
-The React integration provides a hook-based API for managing UTM parameters:
 
 ```tsx
 import { useUTMs } from "utm-manager/react";
 
 function App() {
   const { params, setParam, captureFromURL } = useUTMs({
-    // Configuration options
     autoCapture: true,
     attribution: "first",
     expirationDays: 30,
     onUpdate: (params) => {
-      // Handle UTM updates
       analytics.track("UTM Updated", params);
     },
   });
@@ -79,8 +96,6 @@ function App() {
     <div>
       <h1>Current UTM Parameters:</h1>
       <pre>{JSON.stringify(params, null, 2)}</pre>
-
-      {/* Manual UTM capture button */}
       <button onClick={captureFromURL}>Capture UTMs</button>
     </div>
   );
@@ -88,8 +103,6 @@ function App() {
 ```
 
 ### Next.js Integration
-
-The Next.js integration adds server-side rendering support and integrates with Next.js routing:
 
 ```tsx
 import { useNextUTMs, withUTMs } from "utm-manager/next";
@@ -111,22 +124,39 @@ function Campaign() {
   );
 }
 
-// Enable server-side UTM handling
 export default withUTMs(Campaign);
 ```
 
+### WordPress Integration
+
+Load the main script first, then the WordPress integration:
+
+```html
+<script src="path/to/utm-manager.min.js"></script>
+<script src="path/to/wordpress/utm-manager.js"></script>
+```
+
+Listen for the WordPress-specific event:
+
+```javascript
+window.addEventListener("utm_manager_ready", (event) => {
+  console.log("UTMs ready:", event.detail);
+});
+
+// Or with jQuery
+jQuery(document).on("utm_manager_ready", (event, params) => {
+  console.log("UTMs ready:", params);
+});
+```
+
 ## Configuration Options
-
-### Core Configuration
-
-The UTM Manager accepts several configuration options:
 
 ```typescript
 interface UTMConfig {
   // Attribution strategy: 'first' | 'last' | 'dynamic'
   attribution: AttributionStrategy;
 
-  // Cookie expiration time in days
+  // Cookie expiration in days (default: 30)
   expirationDays: number;
 
   // Cookie domain (e.g., '.example.com')
@@ -139,33 +169,21 @@ interface UTMConfig {
 
 ### Attribution Strategies
 
-The package supports three attribution strategies:
-
-1. First Touch ('first'): Only saves UTM parameters if they haven't been set before
-
+**First Touch** - Only saves UTM parameters if not already set:
 ```javascript
-UTMManager.configure({
-  attribution: "first",
-  expirationDays: 30,
-});
+UTMManager.configure({ attribution: "first" });
 ```
 
-2. Last Touch ('last'): Always overwrites existing UTM parameters with new values
-
+**Last Touch** - Always overwrites with new values:
 ```javascript
-UTMManager.configure({
-  attribution: "last",
-  expirationDays: 30,
-});
+UTMManager.configure({ attribution: "last" });
 ```
 
-3. Dynamic Attribution ('dynamic'): Uses a custom callback to determine attribution logic
-
+**Dynamic** - Custom logic to determine which value to keep:
 ```javascript
 UTMManager.configure({
   attribution: "dynamic",
   attributionCallback: (current, newValue) => {
-    // Custom logic to determine which value to keep
     return newValue.includes("google") ? newValue : current;
   },
 });
@@ -173,102 +191,50 @@ UTMManager.configure({
 
 ## React Hook API
 
-The `useUTMs` hook provides a complete UTM management solution:
-
 ```typescript
 const {
-  // Current UTM parameters
-  params: UTMParams,
-
-  // Get a specific UTM parameter
-  getParam: (key: string) => string | undefined,
-
-  // Set a specific UTM parameter
-  setParam: (key: string, value: string, days?: number) => void,
-
-  // Set multiple UTM parameters
-  setParams: (params: Record<string, string>, days?: number) => void,
-
-  // Update configuration
-  configure: (strategy: AttributionStrategy, config?: Partial<UTMConfig>) => void,
-
-  // Manually capture UTMs from URL
-  captureFromURL: () => void
+  params,          // Current UTM parameters
+  getParam,        // Get specific parameter
+  setParam,        // Set single parameter
+  setParams,       // Set multiple parameters
+  configure,       // Update configuration
+  captureFromURL,  // Manually capture from URL
 } = useUTMs(config);
 ```
 
-## Next.js Integration Features
-
-The Next.js integration extends the base React functionality with:
-
-```typescript
-const {
-  // All features from useUTMs, plus:
-  ...useUTMs(),
-
-  // Enhanced URL capture that works with Next.js routing
-  captureFromURL: () => void
-} = useNextUTMs({
-  // Enable automatic UTM capture on route changes
-  autoCapture?: boolean,
-
-  // Enable server-side rendering support
-  enableSSR?: boolean,
-
-  // Other UTM configuration options
-  ...UTMConfig
-});
-```
-
-## Security Considerations
-
-UTM Manager implements several security best practices:
-
-- Secure cookie settings by default
-- XSS protection through proper encoding
-- SameSite cookie attributes
-- CSRF protection
-- Input validation for UTM parameters
-
-## Browser Support
-
-The package supports all modern browsers and includes fallbacks:
-
-- Chrome (latest)
-- Firefox (latest)
-- Safari (latest)
-- Edge (latest)
-- Internet Explorer 11 (with polyfills)
-
 ## TypeScript Support
-
-The package includes comprehensive TypeScript definitions:
 
 ```typescript
 import type { UTMParams, UTMConfig, AttributionStrategy } from "utm-manager";
 
-// Example type usage
 interface CampaignProps {
   initialUTMs?: UTMParams;
   onUTMUpdate?: (params: UTMParams) => void;
 }
 ```
 
+## Browser Support
+
+- Chrome (latest)
+- Firefox (latest)
+- Safari (latest)
+- Edge (latest)
+
+## Security
+
+- Cookies use `Secure` and `SameSite=Lax` attributes by default
+- All cookie values are properly encoded/decoded
+- Input validation for UTM parameter names
+
 ## Contributing
 
-Contributions are welcome! Feel free to submit pull requests.
+Contributions are welcome! Please run `npm run lint` and `npm test` before submitting PRs.
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## Support
 
-For questions, issues, or feature requests:
-
 - GitHub Issues: [github.com/gokhanarkan/utm-manager/issues](https://github.com/gokhanarkan/utm-manager/issues)
 - Email: hello@gokhanarkan.com
-
----
-
-Made with ❤️ by [Gökhan Arkan](https://github.com/gokhanarkan)
