@@ -1,75 +1,157 @@
 # UTM Manager
 
-A framework-agnostic UTM parameter management solution for JavaScript applications. Provides comprehensive UTM tracking with built-in support for vanilla JavaScript, React, and Next.js.
+A lightweight, framework-agnostic library for managing UTM parameters. Capture, store, and retrieve UTM data with support for multiple attribution strategies.
+
+[**Live Demo →**](https://gokhanarkan.github.io/utm-manager/demo/)
 
 ## Features
 
-- Framework-agnostic core with React and Next.js integrations
-- Multiple attribution strategies (first-touch, last-touch, dynamic)
-- Secure cookie handling with configurable options
-- Cross-domain and subdomain support
-- TypeScript support with comprehensive type definitions
-- Zero dependencies for the core package
-- Server-side rendering support for Next.js
+- **Zero dependencies** — ~2KB gzipped
+- **Framework integrations** — React hooks and Next.js support
+- **Attribution strategies** — First-touch, last-touch, or custom logic
+- **Auto-capture** — Automatically captures UTMs from URL on page load
+- **Cookie storage** — Configurable expiry and domain settings
+- **TypeScript** — Full type definitions included
 
 ## Installation
 
 ```bash
 npm install utm-manager
-# or
-yarn add utm-manager
-# or
-pnpm add utm-manager
 ```
 
-## Usage
+## Quick Start
 
-### Standalone JavaScript
-
-For traditional websites, include the script directly:
+### Standalone (Vanilla JS)
 
 ```html
 <script src="https://unpkg.com/utm-manager/dist/utm-manager.min.js"></script>
 ```
 
-The script automatically:
-- Captures UTM parameters from the URL
-- Stores them in cookies
-- Triggers `utmParametersUpdated` events
-
-#### Standalone API
+The script automatically captures UTM parameters from the URL and stores them in cookies:
 
 ```javascript
-// Get all stored UTM parameters
+// Get all parameters
 const params = UTMManager.getAllUTMs();
+// { utm_source: 'google', utm_medium: 'cpc', ... }
 
-// Get a specific UTM parameter
-const campaign = UTMManager.getUTM("utm_campaign");
+// Get specific parameter
+const source = UTMManager.getUTM('utm_source');
 
-// Manually save a UTM parameter
-UTMManager.saveUTM("utm_source", "newsletter");
-
-// Configure options
-UTMManager.configure({
-  attribution: "first",   // 'first' | 'last' | 'dynamic'
-  expirationDays: 90,
-  domain: ".yourdomain.com",
-});
-
-// Listen for UTM updates
-window.addEventListener("utmParametersUpdated", (event) => {
-  console.log("UTM Parameters:", event.detail);
+// Listen for updates
+window.addEventListener('utmParametersUpdated', (e) => {
+  console.log('UTMs updated:', e.detail);
 });
 ```
 
-#### Form Integration Example
+### React
+
+```tsx
+import { useUTMs } from 'utm-manager/react';
+
+function App() {
+  const { params, setParam, captureFromURL } = useUTMs({
+    autoCapture: true,
+    attribution: 'first',
+    onUpdate: (params) => console.log('Updated:', params),
+  });
+
+  return <pre>{JSON.stringify(params, null, 2)}</pre>;
+}
+```
+
+### Next.js
+
+```tsx
+import { useNextUTMs } from 'utm-manager/next';
+
+function Page() {
+  const { params } = useNextUTMs({ autoCapture: true });
+  return <pre>{JSON.stringify(params, null, 2)}</pre>;
+}
+```
+
+## Configuration
 
 ```javascript
-document.querySelector("form").addEventListener("submit", function() {
-  const utmParams = UTMManager.getAllUTMs();
-  Object.entries(utmParams).forEach(([key, value]) => {
-    const input = document.createElement("input");
-    input.type = "hidden";
+UTMManager.configure({
+  attribution: 'first',     // 'first' | 'last' | 'dynamic'
+  expirationDays: 90,       // Cookie expiry in days
+  domain: '.example.com',   // Cookie domain scope
+});
+```
+
+## Attribution Strategies
+
+| Strategy | Behaviour |
+|----------|-----------|
+| `first` | Keeps the first UTM values, ignores subsequent visits |
+| `last` | Always overwrites with the most recent values (default) |
+| `dynamic` | Uses a custom callback to decide |
+
+**Dynamic attribution example:**
+
+```javascript
+UTMManager.configure({
+  attribution: 'dynamic',
+  attributionCallback: (current, incoming) => {
+    // Prioritise paid traffic over organic
+    return incoming.includes('cpc') ? incoming : current;
+  },
+});
+```
+
+## Supported Parameters
+
+UTM Manager validates against the five standard UTM parameters:
+
+| Parameter | Purpose |
+|-----------|---------|
+| `utm_source` | Traffic source (google, newsletter, twitter) |
+| `utm_medium` | Marketing medium (cpc, email, social) |
+| `utm_campaign` | Campaign identifier (spring_sale, product_launch) |
+| `utm_term` | Paid search keywords |
+| `utm_content` | Differentiate similar content or links |
+
+Non-standard parameters will throw a validation error.
+
+## API Reference
+
+### Standalone
+
+```javascript
+UTMManager.configure(options)    // Set configuration
+UTMManager.getAllUTMs()          // Get all stored parameters
+UTMManager.getUTM(key)           // Get specific parameter
+UTMManager.saveUTM(key, value)   // Save a parameter
+UTMManager.autoCapture()         // Manually trigger URL capture
+```
+
+### React Hook
+
+```typescript
+const {
+  params,         // Current UTM parameters object
+  getParam,       // Get specific parameter
+  setParam,       // Set single parameter
+  setParams,      // Set multiple parameters
+  configure,      // Update configuration
+  captureFromURL, // Manually capture from URL
+} = useUTMs(config);
+```
+
+## Common Use Cases
+
+### Form Integration
+
+Attach UTM data to form submissions:
+
+```javascript
+document.querySelector('form').addEventListener('submit', function() {
+  const utms = UTMManager.getAllUTMs();
+
+  Object.entries(utms).forEach(([key, value]) => {
+    const input = document.createElement('input');
+    input.type = 'hidden';
     input.name = key;
     input.value = value;
     this.appendChild(input);
@@ -77,164 +159,37 @@ document.querySelector("form").addEventListener("submit", function() {
 });
 ```
 
-### React Integration
+### Analytics Integration
 
-```tsx
-import { useUTMs } from "utm-manager/react";
-
-function App() {
-  const { params, setParam, captureFromURL } = useUTMs({
-    autoCapture: true,
-    attribution: "first",
-    expirationDays: 30,
-    onUpdate: (params) => {
-      analytics.track("UTM Updated", params);
-    },
-  });
-
-  return (
-    <div>
-      <h1>Current UTM Parameters:</h1>
-      <pre>{JSON.stringify(params, null, 2)}</pre>
-      <button onClick={captureFromURL}>Capture UTMs</button>
-    </div>
-  );
-}
+```javascript
+window.addEventListener('utmParametersUpdated', (e) => {
+  analytics.track('Campaign Visit', e.detail);
+});
 ```
 
-### Next.js Integration
-
-```tsx
-import { useNextUTMs, withUTMs } from "utm-manager/next";
-
-function Campaign() {
-  const { params, setParam } = useNextUTMs({
-    autoCapture: true,
-    enableSSR: true,
-    onUpdate: (params) => {
-      analytics.track("UTM Updated", params);
-    },
-  });
-
-  return (
-    <div>
-      <h1>Campaign Tracking</h1>
-      <pre>{JSON.stringify(params, null, 2)}</pre>
-    </div>
-  );
-}
-
-export default withUTMs(Campaign);
-```
-
-### WordPress Integration
-
-Load the main script first, then the WordPress integration:
+## WordPress
 
 ```html
 <script src="path/to/utm-manager.min.js"></script>
 <script src="path/to/wordpress/utm-manager.js"></script>
 ```
 
-Listen for the WordPress-specific event:
-
 ```javascript
-window.addEventListener("utm_manager_ready", (event) => {
-  console.log("UTMs ready:", event.detail);
+window.addEventListener('utm_manager_ready', (e) => {
+  console.log('UTMs:', e.detail);
 });
-
-// Or with jQuery
-jQuery(document).on("utm_manager_ready", (event, params) => {
-  console.log("UTMs ready:", params);
-});
-```
-
-## Configuration Options
-
-```typescript
-interface UTMConfig {
-  // Attribution strategy: 'first' | 'last' | 'dynamic'
-  attribution: AttributionStrategy;
-
-  // Cookie expiration in days (default: 30)
-  expirationDays: number;
-
-  // Cookie domain (e.g., '.example.com')
-  domain?: string;
-
-  // Callback for dynamic attribution
-  attributionCallback?: (currentValue: string, newValue: string) => string;
-}
-```
-
-### Attribution Strategies
-
-**First Touch** - Only saves UTM parameters if not already set:
-```javascript
-UTMManager.configure({ attribution: "first" });
-```
-
-**Last Touch** - Always overwrites with new values:
-```javascript
-UTMManager.configure({ attribution: "last" });
-```
-
-**Dynamic** - Custom logic to determine which value to keep:
-```javascript
-UTMManager.configure({
-  attribution: "dynamic",
-  attributionCallback: (current, newValue) => {
-    return newValue.includes("google") ? newValue : current;
-  },
-});
-```
-
-## React Hook API
-
-```typescript
-const {
-  params,          // Current UTM parameters
-  getParam,        // Get specific parameter
-  setParam,        // Set single parameter
-  setParams,       // Set multiple parameters
-  configure,       // Update configuration
-  captureFromURL,  // Manually capture from URL
-} = useUTMs(config);
-```
-
-## TypeScript Support
-
-```typescript
-import type { UTMParams, UTMConfig, AttributionStrategy } from "utm-manager";
-
-interface CampaignProps {
-  initialUTMs?: UTMParams;
-  onUTMUpdate?: (params: UTMParams) => void;
-}
 ```
 
 ## Browser Support
 
-- Chrome (latest)
-- Firefox (latest)
-- Safari (latest)
-- Edge (latest)
+Chrome, Firefox, Safari, and Edge (latest versions).
 
-## Security
+## Licence
 
-- Cookies use `Secure` and `SameSite=Lax` attributes by default
-- All cookie values are properly encoded/decoded
-- Input validation for UTM parameter names
+MIT — see [LICENSE](LICENSE) for details.
 
-## Contributing
+## Links
 
-Contributions are welcome! Please run `npm run lint` and `npm test` before submitting PRs.
-
-## License
-
-MIT License - see the [LICENSE](LICENSE) file for details.
-
-## Support
-
-- GitHub Issues: [github.com/gokhanarkan/utm-manager/issues](https://github.com/gokhanarkan/utm-manager/issues)
-- Email: gokhan at hey dot com
+- [GitHub](https://github.com/gokhanarkan/utm-manager)
+- [npm](https://www.npmjs.com/package/utm-manager)
+- [Live Demo](https://gokhanarkan.github.io/utm-manager/demo/)
