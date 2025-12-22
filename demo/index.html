@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>UTM Manager Demo</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 2rem;
+      background: #f5f5f5;
+      color: #333;
+    }
+
+    h1 {
+      margin-bottom: 0.5rem;
+    }
+
+    .subtitle {
+      color: #666;
+      margin-bottom: 2rem;
+    }
+
+    .card {
+      background: white;
+      border-radius: 8px;
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .card h2 {
+      margin-top: 0;
+      font-size: 1.1rem;
+      color: #444;
+      border-bottom: 1px solid #eee;
+      padding-bottom: 0.5rem;
+    }
+
+    pre {
+      background: #f8f8f8;
+      padding: 1rem;
+      border-radius: 4px;
+      overflow-x: auto;
+      font-size: 0.9rem;
+    }
+
+    .params-display {
+      font-family: monospace;
+      font-size: 0.95rem;
+    }
+
+    .empty {
+      color: #999;
+      font-style: italic;
+    }
+
+    .test-links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    .test-links a {
+      display: inline-block;
+      padding: 0.5rem 1rem;
+      background: #0066cc;
+      color: white;
+      text-decoration: none;
+      border-radius: 4px;
+      font-size: 0.9rem;
+    }
+
+    .test-links a:hover {
+      background: #0055aa;
+    }
+
+    .event-log {
+      max-height: 150px;
+      overflow-y: auto;
+      font-family: monospace;
+      font-size: 0.85rem;
+    }
+
+    .event-log .entry {
+      padding: 0.25rem 0;
+      border-bottom: 1px solid #eee;
+    }
+
+    .event-log .time {
+      color: #999;
+    }
+
+    .controls {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    button {
+      padding: 0.5rem 1rem;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.9rem;
+    }
+
+    .btn-primary {
+      background: #0066cc;
+      color: white;
+    }
+
+    .btn-secondary {
+      background: #666;
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: #0055aa;
+    }
+
+    .btn-secondary:hover {
+      background: #555;
+    }
+
+    .input-group {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .input-group input, .input-group select {
+      padding: 0.5rem;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 0.9rem;
+    }
+
+    .input-group input {
+      flex: 1;
+    }
+
+    footer {
+      text-align: center;
+      margin-top: 2rem;
+      color: #666;
+      font-size: 0.9rem;
+    }
+
+    footer a {
+      color: #0066cc;
+    }
+  </style>
+</head>
+<body>
+  <h1>UTM Manager</h1>
+  <p class="subtitle">A framework-agnostic UTM parameter management library</p>
+
+  <div class="card">
+    <h2>Current UTM Parameters</h2>
+    <div id="params-display" class="params-display">
+      <span class="empty">No UTM parameters stored</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Test with UTM Parameters</h2>
+    <p>Click a link to reload with UTM parameters:</p>
+    <div class="test-links">
+      <a href="?utm_source=google&utm_medium=cpc&utm_campaign=demo">Google CPC</a>
+      <a href="?utm_source=facebook&utm_medium=social&utm_campaign=demo">Facebook Social</a>
+      <a href="?utm_source=newsletter&utm_medium=email&utm_campaign=weekly">Newsletter</a>
+      <a href="?utm_source=twitter&utm_medium=social&utm_content=post123">Twitter Post</a>
+      <a href="?">Clear URL</a>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Manual Controls</h2>
+    <div class="input-group">
+      <select id="param-key">
+        <option value="utm_source">utm_source</option>
+        <option value="utm_medium">utm_medium</option>
+        <option value="utm_campaign">utm_campaign</option>
+        <option value="utm_term">utm_term</option>
+        <option value="utm_content">utm_content</option>
+      </select>
+      <input type="text" id="param-value" placeholder="Enter value">
+      <button class="btn-primary" onclick="saveParam()">Save</button>
+    </div>
+    <div class="controls">
+      <button class="btn-secondary" onclick="captureFromURL()">Capture from URL</button>
+      <button class="btn-secondary" onclick="clearDisplay()">Refresh Display</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Event Log</h2>
+    <div id="event-log" class="event-log">
+      <div class="entry"><span class="time">--:--:--</span> Waiting for events...</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Configuration</h2>
+    <div class="input-group">
+      <select id="attribution" onchange="updateConfig()">
+        <option value="last">Last Touch (default)</option>
+        <option value="first">First Touch</option>
+      </select>
+      <input type="number" id="expiry" value="30" min="1" max="365" style="width: 80px">
+      <button class="btn-secondary" onclick="updateConfig()">Apply</button>
+    </div>
+  </div>
+
+  <footer>
+    <a href="https://github.com/gokhanarkan/utm-manager">View on GitHub</a> |
+    <a href="https://www.npmjs.com/package/utm-manager">npm package</a>
+  </footer>
+
+  <!-- Use local build for development, unpkg for production -->
+  <script src="https://unpkg.com/utm-manager/dist/utm-manager.js"></script>
+  <script>
+    function formatTime() {
+      return new Date().toLocaleTimeString('en-GB');
+    }
+
+    function logEvent(message) {
+      const log = document.getElementById('event-log');
+      const entry = document.createElement('div');
+      entry.className = 'entry';
+      entry.innerHTML = '<span class="time">' + formatTime() + '</span> ' + message;
+      log.insertBefore(entry, log.firstChild);
+    }
+
+    function updateDisplay() {
+      const params = UTMManager.getAllUTMs();
+      const display = document.getElementById('params-display');
+      const keys = Object.keys(params);
+
+      if (keys.length === 0) {
+        display.innerHTML = '<span class="empty">No UTM parameters stored</span>';
+      } else {
+        display.innerHTML = '<pre>' + JSON.stringify(params, null, 2) + '</pre>';
+      }
+    }
+
+    function saveParam() {
+      const key = document.getElementById('param-key').value;
+      const value = document.getElementById('param-value').value;
+
+      if (!value) {
+        alert('Please enter a value');
+        return;
+      }
+
+      UTMManager.saveUTM(key, value);
+      logEvent('Saved: ' + key + ' = ' + value);
+      updateDisplay();
+      document.getElementById('param-value').value = '';
+    }
+
+    function captureFromURL() {
+      const captured = UTMManager.autoCapture();
+      if (captured) {
+        logEvent('Captured UTMs from URL');
+      } else {
+        logEvent('No UTM parameters in URL');
+      }
+      updateDisplay();
+    }
+
+    function clearDisplay() {
+      updateDisplay();
+      logEvent('Display refreshed');
+    }
+
+    function updateConfig() {
+      const attribution = document.getElementById('attribution').value;
+      const expiry = parseInt(document.getElementById('expiry').value) || 30;
+
+      UTMManager.configure({
+        attribution: attribution,
+        expirationDays: expiry
+      });
+
+      logEvent('Config updated: ' + attribution + ', ' + expiry + ' days');
+    }
+
+    // Listen for UTM updates
+    window.addEventListener('utmParametersUpdated', function(event) {
+      logEvent('Event: utmParametersUpdated');
+      updateDisplay();
+    });
+
+    // Initial display
+    updateDisplay();
+    logEvent('UTM Manager loaded');
+
+    // Check if we have URL params
+    if (window.location.search.includes('utm_')) {
+      logEvent('URL contains UTM parameters');
+    }
+  </script>
+</body>
+</html>
