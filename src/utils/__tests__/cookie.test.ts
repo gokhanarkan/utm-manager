@@ -7,15 +7,12 @@ import {
   getAllCookies,
   getJSONCookie,
   setJSONCookie,
+  clearCookieStorage,
 } from "../cookie";
 
 describe("Cookie Utility Module", () => {
   beforeEach(() => {
-    // Clear cookies before each test
-    document.cookie.split(";").forEach((cookie) => {
-      const name = cookie.split("=")[0].trim();
-      document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/`;
-    });
+    clearCookieStorage();
   });
 
   describe("Basic Cookie Operations", () => {
