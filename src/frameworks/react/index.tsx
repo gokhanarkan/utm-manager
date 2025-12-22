@@ -9,6 +9,7 @@ import {
   configureAttribution,
   defaultConfig,
 } from "../../index";
+import { extractUTMsFromURL } from "../../utils/url";
 
 interface UseUTMsConfig extends Partial<UTMConfig> {
   /** Whether to automatically capture UTMs from URL on mount */
@@ -70,11 +71,15 @@ export function useUTMs(config?: UseUTMsConfig): UseUTMsReturn {
     (key: string, value: string, days?: number) => {
       try {
         saveUTMs(key, value, days);
-        setParams((prev) => {
-          const updated = { ...prev, [key]: value };
-          config?.onUpdate?.(updated);
-          return updated;
-        });
+        // Only update local state if the cookie was actually saved
+        const savedValue = getUTM(key);
+        if (savedValue === value) {
+          setParams((prev) => {
+            const updated = { ...prev, [key]: value };
+            config?.onUpdate?.(updated);
+            return updated;
+          });
+        }
       } catch (error) {
         console.error(`Error setting UTM parameter ${key}:`, error);
       }
@@ -102,16 +107,7 @@ export function useUTMs(config?: UseUTMsConfig): UseUTMsReturn {
   );
 
   const captureUTMsFromURL = useCallback(() => {
-    if (typeof window === "undefined") return;
-
-    const searchParams = new URLSearchParams(window.location.search);
-    const utmParams: Record<string, string> = {};
-
-    searchParams.forEach((value, key) => {
-      if (key.startsWith("utm_")) {
-        utmParams[key] = value;
-      }
-    });
+    const utmParams = extractUTMsFromURL();
 
     if (Object.keys(utmParams).length > 0) {
       setMultipleParams(utmParams);

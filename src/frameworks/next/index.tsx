@@ -3,6 +3,7 @@ import { useEffect } from "react";
 import { useRouter } from "next/router";
 import type { NextComponentType, NextPageContext } from "next";
 import { useUTMs } from "../react";
+import { extractUTMsFromQuery } from "../../utils/url";
 import type { UTMParams, UTMConfig, AttributionStrategy } from "../../index";
 
 interface UseNextUTMsConfig extends Partial<UTMConfig> {
@@ -34,15 +35,8 @@ export function useNextUTMs(userConfig?: UseNextUTMsConfig) {
   useEffect(() => {
     if (!config.autoCapture || !router.isReady) return;
 
-    // Extract UTM parameters from the query
-    const utmParams: Record<string, string> = {};
-    Object.entries(router.query).forEach(([key, value]) => {
-      if (key.startsWith("utm_") && typeof value === "string") {
-        utmParams[key] = value;
-      }
-    });
+    const utmParams = extractUTMsFromQuery(router.query);
 
-    // If we have UTM parameters, save them
     if (Object.keys(utmParams).length > 0) {
       utmTools.setParams(utmParams);
     }
@@ -50,14 +44,8 @@ export function useNextUTMs(userConfig?: UseNextUTMsConfig) {
 
   return {
     ...utmTools,
-    // Override captureFromURL to use Next.js router query
     captureFromURL: () => {
-      const utmParams: Record<string, string> = {};
-      Object.entries(router.query).forEach(([key, value]) => {
-        if (key.startsWith("utm_") && typeof value === "string") {
-          utmParams[key] = value;
-        }
-      });
+      const utmParams = extractUTMsFromQuery(router.query);
       if (Object.keys(utmParams).length > 0) {
         utmTools.setParams(utmParams);
       }
@@ -69,46 +57,37 @@ interface WithUTMsProps {
   initialUTMs?: UTMParams;
 }
 
-type ComponentWithUTMs<P = {}> = NextComponentType<
+type ComponentWithUTMs<P extends object = object> = NextComponentType<
   NextPageContext,
-  {},
+  P & WithUTMsProps,
   P & WithUTMsProps
 >;
 
 /**
  * Higher-order function to enable server-side UTM handling
  */
-export function withUTMs<P extends WithUTMsProps>(
+export function withUTMs<P extends object>(
   Component: ComponentWithUTMs<P>
 ): ComponentWithUTMs<P> {
-  const WrappedComponent: ComponentWithUTMs<P> = (props: P & WithUTMsProps) => {
+  const WrappedComponent = (props: P & WithUTMsProps) => {
     return <Component {...props} />;
   };
 
   WrappedComponent.getInitialProps = async (ctx: NextPageContext) => {
-    // Get component's initial props if they exist
-    let componentProps = {};
+    let componentProps = {} as P;
     if (Component.getInitialProps) {
-      componentProps = await Component.getInitialProps(ctx);
+      componentProps = (await Component.getInitialProps(ctx)) as P;
     }
 
-    // Handle server-side UTM extraction
-    const initialUTMs: UTMParams = {};
-    if (ctx.query) {
-      Object.entries(ctx.query).forEach(([key, value]) => {
-        if (key.startsWith("utm_") && typeof value === "string") {
-          initialUTMs[key] = value;
-        }
-      });
-    }
+    const initialUTMs = ctx.query ? extractUTMsFromQuery(ctx.query) : {};
 
     return {
-      ...(componentProps as P),
+      ...componentProps,
       initialUTMs,
-    };
+    } as P & WithUTMsProps;
   };
 
-  return WrappedComponent;
+  return WrappedComponent as ComponentWithUTMs<P>;
 }
 
 // Export types for convenience

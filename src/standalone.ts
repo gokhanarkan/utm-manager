@@ -1,4 +1,5 @@
 import { configureAttribution, saveUTMs, getUTM, getUTMs } from "./index";
+import { extractUTMsFromURL } from "./utils/url";
 import type { UTMConfig, AttributionStrategy } from "./index";
 
 const UTMManager = {
@@ -22,24 +23,21 @@ const UTMManager = {
   autoCapture() {
     if (typeof window === "undefined") return false;
 
-    const urlParams = new URLSearchParams(window.location.search);
-    let captured = false;
+    const utmParams = extractUTMsFromURL();
+    const paramKeys = Object.keys(utmParams);
 
-    urlParams.forEach((value, key) => {
-      if (key.startsWith("utm_")) {
-        this.saveUTM(key, value);
-        captured = true;
-      }
+    if (paramKeys.length === 0) return false;
+
+    paramKeys.forEach((key) => {
+      this.saveUTM(key, utmParams[key]);
     });
 
-    if (captured) {
-      const event = new CustomEvent("utmParametersUpdated", {
-        detail: this.getAllUTMs(),
-      });
-      window.dispatchEvent(event);
-    }
+    const event = new CustomEvent("utmParametersUpdated", {
+      detail: this.getAllUTMs(),
+    });
+    window.dispatchEvent(event);
 
-    return captured;
+    return true;
   },
 };
 
