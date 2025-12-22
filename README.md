@@ -237,4 +237,4 @@ MIT License - see the [LICENSE](LICENSE) file for details.
 ## Support
 
 - GitHub Issues: [github.com/gokhanarkan/utm-manager/issues](https://github.com/gokhanarkan/utm-manager/issues)
-- Email: hello@gokhanarkan.com
+- Email: gokhan at hey dot com
