@@ -207,9 +207,118 @@
       grid-template-columns: repeat(3, 1fr);
     }
 
+    /* Config row sizing */
+    .config-strategy {
+      max-width: 200px;
+    }
+    .config-expiry {
+      max-width: 150px;
+    }
+    .config-apply {
+      display: flex;
+      align-items: flex-end;
+    }
+
     @media (max-width: 900px) {
       .grid-2, .grid-3 {
         grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 600px) {
+      main {
+        padding: 5rem 1rem 2rem;
+      }
+
+      .header-inner {
+        padding: 0.75rem 1rem;
+      }
+
+      .hero {
+        padding: 2rem 0;
+      }
+
+      .hero h1 {
+        font-size: 2rem;
+      }
+
+      .hero p {
+        font-size: 1rem;
+      }
+
+      .badge-row {
+        gap: 0.5rem;
+      }
+
+      .badge {
+        font-size: 0.7rem;
+        padding: 0.375rem 0.75rem;
+      }
+
+      .section {
+        margin-bottom: 2.5rem;
+      }
+
+      .section-title {
+        font-size: 1.25rem;
+      }
+
+      .card {
+        padding: 1rem;
+      }
+
+      .form-row {
+        flex-direction: column;
+        gap: 0.75rem;
+      }
+
+      .form-group {
+        width: 100%;
+      }
+
+      .config-strategy,
+      .config-expiry {
+        max-width: none;
+      }
+
+      .config-apply {
+        align-items: stretch;
+      }
+
+      .btn {
+        width: 100%;
+      }
+
+      .params-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .attribution-step {
+        font-size: 0.7rem;
+      }
+
+      .code-block {
+        font-size: 0.7rem;
+        padding: 0.75rem;
+      }
+
+      .code-block code {
+        font-size: 0.7rem;
+      }
+
+      .nav-links a {
+        padding: 0.375rem 0.75rem;
+        font-size: 0.8rem;
+      }
+
+      .logo {
+        font-size: 1rem;
+      }
+
+      .logo-icon {
+        width: 28px;
+        height: 28px;
+        font-size: 0.8rem;
       }
     }
 
@@ -1015,19 +1124,19 @@
         <div class="card-header">
           <span class="card-title">Try Attribution Strategies</span>
         </div>
-        <div class="form-row">
-          <div class="form-group" style="max-width: 200px;">
+        <div class="form-row config-row">
+          <div class="form-group config-strategy">
             <label class="form-label">Strategy</label>
             <select id="attribution-select" class="form-select" onchange="updateAttribution()">
               <option value="last">Last Touch</option>
               <option value="first">First Touch</option>
             </select>
           </div>
-          <div class="form-group" style="max-width: 150px;">
+          <div class="form-group config-expiry">
             <label class="form-label">Expiry (days)</label>
             <input type="number" id="expiry-input" class="form-input" value="30" min="1" max="365">
           </div>
-          <div class="form-group" style="display: flex; align-items: flex-end;">
+          <div class="form-group config-apply">
             <button class="btn btn-secondary" onclick="updateAttribution()">Apply Config</button>
           </div>
         </div>
