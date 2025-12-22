@@ -1,6 +1,6 @@
 {
   "name": "utm-manager",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "A robust solution for managing UTM parameters across different JavaScript frameworks",
   "author": "Gökhan Arkan <hello@gokhanarkan.com>",
   "license": "MIT",
@@ -49,7 +49,6 @@
     "prepare": "husky install",
     "prepublishOnly": "npm run build"
   },
-  "dependencies": {},
   "peerDependencies": {
     "next": ">=12.0.0",
     "react": ">=16.8.0",
@@ -71,6 +70,7 @@
     "@rollup/plugin-node-resolve": "^15.0.0",
     "@rollup/plugin-terser": "^0.4.0",
     "@rollup/plugin-typescript": "^11.0.0",
+    "@testing-library/react": "^16.3.1",
     "@types/jest": "^29.0.0",
     "@types/node": "^18.0.0",
     "@types/react": "^18.0.0",
