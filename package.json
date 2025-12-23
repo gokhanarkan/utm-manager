@@ -1,6 +1,6 @@
 {
   "name": "utm-manager",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "A robust solution for managing UTM parameters across different JavaScript frameworks",
   "author": "Gökhan Arkan <hello@gokhanarkan.com>",
   "license": "MIT",
